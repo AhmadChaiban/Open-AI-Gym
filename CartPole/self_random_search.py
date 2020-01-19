@@ -93,3 +93,4 @@ observation,reward,done,info,frames = play_episode(weights)
 ## Plotting the average score per random search iteration
 plt.plot(avg_per_iteration)
 plt.show()
+## Find a way to pick out the best observation
