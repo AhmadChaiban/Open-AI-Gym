@@ -143,7 +143,7 @@ def main():
 
   plt.plot(totalrewards)
   plt.title("Rewards")
-  plt.show()
+  plt.show()          
 
   plot_running_avg(totalrewards)
 
