@@ -1,3 +1,6 @@
+from __future__ import print_function, division
+from builtins import range
+
 import numpy as np
 import sys 
 import os 
@@ -12,17 +15,20 @@ from self_q_learning_bins import plot_running_avg
 
 class SGDRegressor:
     def __init__(self,D):
-        self.w = np.random.randn(D) / np.sqr(D)
+        self.w = np.random.randn(D) / np.sqrt(D)
         self.lr = 0.1
 
     def partial_fit(self, X, Y):
+        return X.dot(self.w)
+
+    def predict(self, X):
         return X.dot(self.w)
 
 class FeatureTransformer:
     def __init__(self,env):
         ## note that the state samples are poor, b/c you get 
         ## velocities that are close to infinity
-        observation_examples = np.random.random((20000,4))*2 - 1
+        observation_examples = np.random.random((2000,4))*2 - 1
         scaler = StandardScaler()
         scaler.fit(observation_examples)
 
@@ -43,7 +49,7 @@ class FeatureTransformer:
         self.scaler = scaler 
         self.featurizer = featurizer
 
-    def transform(self,observations):
+    def transform(self, observations):
         scaled = self.scaler.transform(observations)
         return self.featurizer.transform(scaled)
 
@@ -116,10 +122,10 @@ def main():
     model = Model(env, ft)
     gamma = 0.99 
 
-    if 'monitor' in sys.argv:
-        filename = os.path.basename(__file__).split('.')[0]
-        monitor_dir = './' + filename + '_' + str(datetime.now())
-        env = wrappers.Monitor(env, monitor_dir)
+    # if 'monitor' in sys.argv:
+    #     filename = os.path.basename(__file__).split('.')[0]
+    #     monitor_dir = './' + filename + '_' + str(datetime.now())
+    #     env = wrappers.Monitor(env, monitor_dir)
         
     N = 500
     totalrewards = np.empty(N)
@@ -142,5 +148,5 @@ def main():
     plt.show()
     plot_running_avg(totalrewards)
 
-    if __name__ == '__main__':
-        main()
+if __name__ == '__main__':
+    main()
