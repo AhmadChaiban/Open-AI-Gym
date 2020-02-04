@@ -140,13 +140,11 @@ def main():
     print(f"Average reward for last 100 episodes: {totalrewards[-100:].mean()}")
     print("Total Steps: ", totalrewards.sum())
 
-
-    play_one(env, model, eps, gamma, True)
-
     plt.plot(totalrewards)
     plt.title("Rewards")
     plt.show()
     plot_running_avg(totalrewards)
+    play_one(env, model, eps, gamma, True)
 
 if __name__ == '__main__':
     main()
