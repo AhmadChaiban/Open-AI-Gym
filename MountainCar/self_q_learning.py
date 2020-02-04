@@ -34,8 +34,8 @@ class FeatureTransformer:
             ('rbf3', RBFSampler(gamma = 1.0, n_components=500)),
             ('rbf4', RBFSampler(gamma = 0.5, n_components=500))
         ])
-        featurizer.fit(scaler.transform(observation_examples))
-
+        example_features = featurizer.fit_transform(scaler.transform(observation_examples))
+        self.dimensions = example_features.shape[1]
         self.scaler = scaler
         self.featurizer = featurizer
 
