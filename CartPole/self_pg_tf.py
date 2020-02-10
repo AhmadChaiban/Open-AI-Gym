@@ -5,13 +5,11 @@ from self_q_learning import plot_running_avg
 
 ## Model object
 class Model:
-    def __init__(self, input_dim, dense1, dense2, dense3, dense4, lr, from_logits):
+    def __init__(self, input_dim, dense1, dense2, lr, from_logits):
         ## Defining the model
         self.model = tf.keras.Sequential()
         self.model.add(tf.keras.layers.Dense(dense1, input_dim = input_dim, activation = 'relu'))
-        self.model.add(tf.keras.layers.Dense(dense2, activation = 'relu'))
-        self.model.add(tf.keras.layers.Dense(dense3, activation = 'relu'))
-        self.model.add(tf.keras.layers.Dense(dense4, activation = 'softmax'))
+        self.model.add(tf.keras.layers.Dense(dense2, activation = 'softmax'))
         self.model.build()
         ## Defining the optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate = lr)
@@ -59,7 +57,7 @@ class Model:
                 observation, reward, done, _ = env.step(action)
                 ep_score += reward
                 if done:
-                    reward -= 10 # small trick to make training faster
+                    reward = -200 # small trick to make training faster
                 grads = tape.gradient(loss, self.model.trainable_variables)
                 ep_memory.append([grads,reward])
             #Discound the rewards
@@ -84,7 +82,7 @@ if __name__ == '__main__':
     )
     env = gym.make('Cart-v0')
 
-    model = Model(4, 102, 52, 32, 2, 0.01, True)
+    model = Model(4, 32, 2, 0.01, True)
 
     N = 1000
     scores = []
