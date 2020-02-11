@@ -13,6 +13,15 @@ class PolicyModel:
             Dense(dense2, activation = self.gaussian_activation)
         ])
 
+        ## To model the mean and the variance
+        self.mean_layers = []
+        self.var_layers = []
+        ## Gather the parameters
+        self.params = []
+
+        ## Does a gaussian activation with the random search
+        ## optimization do the trick? Check!
+
     def gaussian_activation(self, x):
         sq = tf.square(x)
         neg = tf.negative(sq)
