@@ -10,7 +10,7 @@ class PolicyModel:
     def __init__ (self, input, dense1, dense2):
         self.model = Sequential([
             Dense(dense1, input_dim = input, activation = 'relu'),
-            Dense(dense2, activation = self.gaussian_activation)
+            Dense(dense2, activation = tf.math.softplus)
         ])
 
         ## To model the mean and the variance
@@ -21,11 +21,11 @@ class PolicyModel:
 
         ## Does a gaussian activation with the random search
         ## optimization do the trick? Check!
-
-    def gaussian_activation(self, x):
-        sq = tf.square(x)
-        neg = tf.negative(sq)
-        return tf.exp(neg)
+    #
+    # def gaussian_activation(self, x):
+    #     sq = tf.square(x)
+    #     neg = tf.negative(sq)
+    #     return tf.exp(neg)
 
 
 def random_search(env, model, gamma):
