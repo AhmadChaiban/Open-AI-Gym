@@ -51,7 +51,7 @@ class LearningAgent:
         return model
     ## This gets the wieghts from the Q network model and gives them to the
     ## DQ network
-    def alighn_target_model(self):
+    def align_target_model(self):
         self.target_network.set_weights(self.q_network.get_weights())
     ## Sample an action from the environment using epsilon greedy
     ## or try to predict on the state and return the index of the
@@ -104,11 +104,14 @@ class LearningAgent:
             if timestep%10 == 0:
                 bar.update(timestep/10 + 1)
 
-    def play_multiple_episodes(self, env, agent, num_episodes, bar, timesteps_per_episode, batch_size):
+    def play_multiple_episodes(self, env, agent, num_episodes, timesteps_per_episode, batch_size):
         for e in range(0, num_episodes):
             ## reset the environment
             state = env.reset()
             state = np.reshape(state, [1, 1])
+            ## defining the progress bar
+            bar = progressbar.ProgressBar(maxval=timesteps_per_episode/10, widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+            bar.start()
             ## initialize the variables
             reward = 0
             terminated = False
@@ -116,29 +119,26 @@ class LearningAgent:
             bar.finish()
             if (e + 1) % 10 == 0:
                 print("**********************************")
-            print("Episode: {}".format(e + 1))
-            env.render()
-            print("**********************************")
+                print("Episode: {}".format(e + 1))
+                env.render()
+                print("**********************************")
 
 
 if __name__ == '__main__':
     ## Creating the Taxi v2 environment
-    env = gym.make("Taxi-v2").env
+    env = gym.make("Taxi-v3").env
     ## Defining the adam optimizer with the learning rate
     optimizer = Adam(learning_rate=0.01)
     ## Creating a learning agent using the environment and the optimizer
     agent_7bb_booty = LearningAgent(env, optimizer)
     ## Define some basic parameters
     batch_size = 32
-    num_episodes = 100
-    timesteps_per_episode = 1000
+    num_episodes = 10
+    timesteps_per_episode = 100
     ## Give a summary of the DQN
     agent_7bb_booty.q_network.summary()
-    ## defining the progress bar
-    bar = progressbar.ProgressBar(maxval=timesteps_per_episode/10, widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
-    bar.start()
     ## Let the agent play! 7bb play bibibibi play!
-    agent_7bb_booty.play_multiple_episodes(env, agent_7bb_booty, num_episodes, bar, timesteps_per_episode, batch_size)
+    agent_7bb_booty.play_multiple_episodes(env, agent_7bb_booty, num_episodes, timesteps_per_episode, batch_size)
     # print(f'Number of states: {env.observation_space.n}')
     # print(f'Number of actions: {env.action_space.n}')
 
