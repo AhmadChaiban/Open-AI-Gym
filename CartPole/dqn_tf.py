@@ -33,6 +33,11 @@ class LearningAgent:
         self.target_network = self.build_compile_model()
         self.align_target_model()
 
+    def store(self, state, action, reward, next_state, terminated):
+        self.experience_replay.append((state, action, reward, next_state, terminated))
+
+    
+
 
 
 
