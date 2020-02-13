@@ -27,7 +27,6 @@ class PolicyModel:
     #     neg = tf.negative(sq)
     #     return tf.exp(neg)
 
-
 def random_search(env, model, gamma):
     totalrewards = []
     best_avg_totalreward = float('-inf')
@@ -56,7 +55,7 @@ if __name__ == '__main__':
     ## Build the model here
     gamma = 0.99
 
-    totalrewards, pmodel = random_search(env, model, gamma)
+    totalrewards, model = random_search(env, model, gamma)
     print(f'max reward: {np.max(totalrewards)}')
 
     avg_totalrewards = play_multiple_episodes(env, 100, pmodel, gamma, print_iters=True)
