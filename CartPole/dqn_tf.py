@@ -36,7 +36,17 @@ class LearningAgent:
     def store(self, state, action, reward, next_state, terminated):
         self.experience_replay.append((state, action, reward, next_state, terminated))
 
-    
+    def build_compile_model(self):
+        model = Sequential([
+            Embedding(self.state_size, 10, input_length = 1),
+            Reshape((10,)),
+            Dense(50, activation ='relu'),
+            Dense(50, activation = 'relu'),
+            Dense(self.action_size, activation = 'linear')
+        ])
+
+        model.compile(loss = 'mse', optimizer = self.optimizer)
+        return model 
 
 
 
