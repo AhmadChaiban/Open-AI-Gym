@@ -36,6 +36,7 @@ class LearningAgent:
     def store(self, state, action, reward, next_state, terminated):
         self.experience_replay.append((state, action, reward, next_state, terminated))
 
+    ## Building the actual Neural Network
     def build_compile_model(self):
         model = Sequential([
             Embedding(self.state_size, 10, input_length = 1),
@@ -45,8 +46,24 @@ class LearningAgent:
             Dense(self.action_size, activation = 'linear')
         ])
 
+        ## Compiling the model with mean squared error and optimizer
         model.compile(loss = 'mse', optimizer = self.optimizer)
-        return model 
+        return model
+    ## This gets the wieghts from the Q network model and gives them to the
+    ## DQ network
+    def alighn_target_model(self):
+        self.target_network.set_weights(self.q_network.get_weights())
+    ## Sample an action from the environment using epsilon greedy
+    ## or try to predict on the state and return the index of the
+    ## maximum of the q_values
+    def act(self, state):
+        if np.random.random() <= self.epsilon:
+            return env.action_space.sample()
+
+        q_values = self.q_network.predict(state)
+        return np.argmax(q_values[0])
+
+    
 
 
 
