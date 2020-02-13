@@ -63,8 +63,25 @@ class LearningAgent:
         q_values = self.q_network.predict(state)
         return np.argmax(q_values[0])
 
-    
-
+    ## In this method we pick random samples from the experience
+    ## replay memory and train the Q-Network
+    def retrain(self, batch_size):
+        ## Taking a minibatch
+        minibatch = random.sample(self.experience_replay, batch_size)
+        ## Finding the state, action, reward and state prime in the batch
+        for state, action, reward, next_state, terminated in minibatch:
+            ## Making a prediction on the state
+            target = self.q_network.predict(state)
+            ## If it's terminated just return the reward
+            if terminated:
+                target[0][action] = reward
+            ## Else predict on the next state
+            ## and (NOT SURE OF THIS ONE) discount the reward
+            else:
+                t = self.target_network.predict(next_state)
+                target[0][action] = reward + self.gamma * np.amax(t)
+            ## Fit the network on the state, target for n epochs
+            self.q_network.fit(state, target, epochs=1, verbose=0)
 
 
 
