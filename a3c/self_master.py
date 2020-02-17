@@ -3,6 +3,8 @@ import gym
 import tensorflow as tf
 from tensorflow.keras import optimizers
 from self_networks import ActorCriticModel
+from self_random_agent import RandomAgent
+import multiprocessing
 # from self_worker import Worker
 
 class MasterAgent:
@@ -18,16 +20,38 @@ class MasterAgent:
         self.global_model = ActorCriticModel(self.state_size, self.action_size)
         self.global_model(tf.convert_to_tensor(np.random.random((1, self.state_size)), dtype=tf.float32))
 
-    def worker_assignment(self):
-        return workers = [Worker(self.state_size,
+    def worker_assignment(self, res_queue):
+        workers = [Worker(self.state_size,
                                  self.action_size,
                                  self.global_model,
-                                 self.opt, res_queue,
-                                 i, game_name=self.game_name,
-                                 save_dir=self.save_dir) for i in range(multiprocessing.cpu_count())]
+                                 self.optimizer, res_queue,
+                                 i, game_name=self.game_name) for i in range(multiprocessing.cpu_count())]
+        return workers
 
 
-    # def train(self):
+    def train(self, maxEpisodes):
+        random_agent = RandomAgent(self.game_name, maxEpisodes)
+        random_agent.run()
+
+        res_queue = Queue()
+
+        workers = self.worker_assignment(res_queue)
+
+        for i, worker in enumerate(workers):
+            print(f"Starting worker {i}")
+            worker.start()
+
+        # record episode reward to plot
+        moving_average_rewards = []
+        while True:
+            reward = res_queue.get()
+            if reward is not None:
+                moving_average_rewards.append(reward)
+            else:
+                break
+
+
+
 
 
 
