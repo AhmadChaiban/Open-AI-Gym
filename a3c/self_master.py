@@ -5,6 +5,7 @@ from tensorflow.keras import optimizers
 from self_networks import ActorCriticModel
 from self_random_agent import RandomAgent
 import multiprocessing
+import matplotlib.pyplot as plt
 # from self_worker import Worker
 
 class MasterAgent:
@@ -28,6 +29,22 @@ class MasterAgent:
                                  i, game_name=self.game_name) for i in range(multiprocessing.cpu_count())]
         return workers
 
+    def collect_moving_average_rewards(self, res_queue):
+        # record episode reward to plot
+        moving_average_rewards = []
+        while True:
+            reward = res_queue.get()
+            if reward is not None:
+                moving_average_rewards.append(reward)
+            else:
+                break
+        return moving_average_rewards
+
+    def plot_moving_average_rewards(self, moving_average_rewards):
+        plt.plot(moving_average_rewards)
+        plt.ylabel('Moving average ep reward')
+        plt.xlabel('Step')
+        plt.show()
 
     def train(self, maxEpisodes):
         random_agent = RandomAgent(self.game_name, maxEpisodes)
@@ -41,14 +58,12 @@ class MasterAgent:
             print(f"Starting worker {i}")
             worker.start()
 
-        # record episode reward to plot
-        moving_average_rewards = []
-        while True:
-            reward = res_queue.get()
-            if reward is not None:
-                moving_average_rewards.append(reward)
-            else:
-                break
+        moving_average_rewards = self.collect_moving_average_rewards(res_queue)
+
+        [w.join() for w in workers]
+
+        self.plot_moving_average_rewards(moving_average_rewards)
+
 
 
 
