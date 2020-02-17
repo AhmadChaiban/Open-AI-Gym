@@ -2,6 +2,7 @@ import numpy as np
 import gym
 import tensorflow as tf
 from tensorflow.keras import optimizers
+from self_networks import ActorCriticModel
 
 class MasterAgent:
     def __init__(self):
