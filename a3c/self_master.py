@@ -22,11 +22,18 @@ class MasterAgent:
         self.global_model = ActorCriticModel(self.state_size, self.action_size)
         self.global_model(tf.convert_to_tensor(np.random.random((1, self.state_size)), dtype=tf.float32))
 
+        self.gamma = 0.99
+        self.maxEpisodes = 20
+        self.update_freq = 5
+
     def worker_assignment(self, res_queue):
         workers = [Worker(self.state_size,
                                  self.action_size,
                                  self.global_model,
                                  self.optimizer, res_queue,
+                                 self.maxEpisodes,
+                                 self.update_freq,
+                                 self.gamma,
                                  i, game_name=self.game_name) for i in range(multiprocessing.cpu_count())]
         return workers
 
