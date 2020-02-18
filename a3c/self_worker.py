@@ -10,7 +10,7 @@ class Worker(threading.Thread):
     # Setting up global variables across different threads
     global_episode = 0
     best_score = 0
-    save_lock = threading.lock()
+    save_lock = threading.Lock()
 
     def __init__(self,
                  state_size,
