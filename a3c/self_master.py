@@ -6,7 +6,7 @@ from self_networks import ActorCriticModel
 from self_random_agent import RandomAgent
 import multiprocessing
 import matplotlib.pyplot as plt
-# from self_worker import Worker
+from self_worker import Worker
 
 class MasterAgent:
     def __init__(self):
