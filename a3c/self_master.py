@@ -8,6 +8,7 @@ import multiprocessing
 import matplotlib.pyplot as plt
 from self_worker import Worker
 import os
+from queue import Queue
 
 class MasterAgent:
     def __init__(self):
@@ -54,8 +55,8 @@ class MasterAgent:
         plt.xlabel('Step')
         plt.show()
 
-    def train(self, maxEpisodes):
-        random_agent = RandomAgent(self.game_name, maxEpisodes)
+    def train(self):
+        random_agent = RandomAgent(self.game_name, self.maxEpisodes)
         random_agent.run()
 
         res_queue = Queue()
@@ -76,7 +77,7 @@ class MasterAgent:
         env = gym.make(self.game_name).unwrapped
         state = env.reset()
         model = self.global_model
-        model_path = os.path.join(self.save_dir, 'model_{}.h5'.format(self.game_name))
+        model_path = os.path.join('./', 'model_{}.h5'.format(self.game_name))
         print('Loading model from: {}'.format(model_path))
         model.load_weights(model_path)
         done = False
@@ -97,6 +98,13 @@ class MasterAgent:
             print("Received Keyboard Interrupt. Shutting down.")
         finally:
             env.close()
+
+if __name__ == '__main__':
+    master = MasterAgent()
+    to_train = True
+    if to_train == True:
+        master.train()
+    master.play()
 
 
 
