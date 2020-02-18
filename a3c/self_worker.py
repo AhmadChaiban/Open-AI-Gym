@@ -1,6 +1,10 @@
 import threading
-from self_networks import ActorCriticModel
+from self_networks import ActorCriticModel, Memory
 import gym
+import tensorflow as tf
+import os
+import numpy as np
+from self_random_agent import record
 
 class Worker(threading.Thread):
     # Setting up global variables across different threads
@@ -15,6 +19,9 @@ class Worker(threading.Thread):
                  optimizer,
                  result_queue,
                  idx,
+                 maxEpisodes,
+                 update_freq,
+                 gamma,
                  game_name = 'CartPole-v0'):
         super(Worker, self).__init__()
         self.state_size = state_size
@@ -27,3 +34,124 @@ class Worker(threading.Thread):
         self.game_name = game_name
         self.env = gym.make(self.game_name)
         self.eps_loss = 0.0
+        self.maxEpisodes = maxEpisodes
+        self.update_freq = update_freq
+        self.gamma = gamma
+
+    def get_discounted_rewards(self, gamma, reward_sum, memory):
+        # Get discounted rewards
+        discounted_rewards = []
+        for reward in memory.rewards[::-1]:  # reverse buffer r
+            reward_sum = reward + gamma * reward_sum
+            discounted_rewards.append(reward_sum)
+        return discounted_rewards.reverse()
+
+    def get_policy_loss(self, memory, logits, advantage):
+        # Calculate our policy loss
+        actions_one_hot = tf.one_hot(memory.actions, self.action_size, dtype=tf.float32)
+
+        policy = tf.nn.softmax(logits)
+        entropy = tf.reduce_sum(policy * tf.log(policy + 1e-20), axis=1)
+
+        policy_loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=actions_one_hot,
+                                                                 logits=logits)
+        policy_loss *= tf.stop_gradient(advantage)
+        policy_loss -= 0.01 * entropy
+        return policy_loss
+
+    def compute_loss(self,
+                     done,
+                     new_state,
+                     memory,
+                     gamma = 0.99):
+        if done:
+            reward_sum = 0
+        else:
+            reward_sum = self.local_model(
+                tf.convert_to_tensor(new_state[None, :],
+                                     dtype=tf.float32))[-1].numpy()[0]
+
+        discounted_rewards = self.get_discounted_rewards(gamma, reward_sum, memory)
+
+        logits, values = self.local_model(
+            tf.convert_to_tensor(np.vstack(memory.states),
+                                 dtype=tf.float32))
+        # Get our advantages
+        advantage = tf.convert_to_tensor(np.array(discounted_rewards)[:, None],
+                                         dtype=tf.float32) - values
+        # Value loss
+        value_loss = advantage ** 2
+
+        policy_loss = self.get_policy_loss(memory, logits, advantage)
+
+        total_loss = tf.reduce_mean((0.5 * value_loss + policy_loss))
+        return total_loss
+
+
+    def run(self):
+        total_step = 1
+        memory = Memory()
+        while Worker.global_episode < self.maxEpisodes:
+            memory.clear()
+            current_state = self.env.reset()
+            ep_reward = 0.
+            ep_steps = 0
+            time_count = 0
+            self.ep_loss = 0
+            done = False
+            while not done:
+                logits, _ = self.local_model(
+                    tf.convert_to_tensor(current_state[None,:],
+                                         dtype = tf.float32))
+            probs = tf.nn.softmax(logits)
+
+            action = np.random.choice(self.action_size, p=probs.numpy()[0])
+            new_state, reward, done, _ = self.env.step(action)
+            if done:
+                reward = -1
+            ep_reward += reward
+            memory.store(current_state, action, reward)
+            if time_count == self.update_freq or done:
+                # Calculate gradient wrt to local model. We do so by tracking the
+                # variables involved in computing the loss by using tf.GradientTape
+                with tf.GradientTape() as tape:
+                    total_loss = self.compute_loss(done,
+                                                   new_state,
+                                                   memory,
+                                                   self.gamma)
+                self.ep_loss += total_loss
+                # Calculate local gradients
+                grads = tape.gradient(total_loss, self.local_model.trainable_weights)
+                # Push local gradients to global model
+                self.optimizer.apply_gradients(zip(grads,
+                                             self.global_model.trainable_weights))
+                # Update local model with new weights
+                self.local_model.set_weights(self.global_model.get_weights())
+
+                memory.clear()
+                time_count = 0
+
+                if done:  # done and print information
+                    Worker.global_moving_average_reward = \
+                        record(Worker.global_episode, ep_reward, self.worker_idx,
+                               Worker.global_moving_average_reward, self.result_queue,
+                               self.ep_loss, ep_steps)
+                # We must use a lock to save our model and to print to prevent data races.
+                    if ep_reward > Worker.best_score:
+                        with Worker.save_lock:
+                            print("Saving best model to {}, "
+                                "episode score: {}".format(self.save_dir, ep_reward))
+                            self.global_model.save_weights(
+                                os.path.join(self.save_dir,
+                                         'model_{}.h5'.format(self.game_name))
+                            )
+                            Worker.best_score = ep_reward
+                    Worker.global_episode += 1
+            ep_steps += 1
+
+            time_count += 1
+            current_state = new_state
+            total_step += 1
+        self.result_queue.put(None)
+
+
